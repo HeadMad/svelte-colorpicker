@@ -1,13 +1,6 @@
 <script>
 	let { onchangecolor, startcolor, size = 240 } = $props();
 
-	let isTouch =
-		"ontouchstart" in globalThis ||
-		(globalThis.DocumentTouch &&
-			document instanceof globalThis.DocumentTouch) ||
-		navigator.maxTouchPoints > 0 ||
-		globalThis.navigator.msMaxTouchPoints > 0;
-
 	let hR = $state(255);
 	let hG = $state(0);
 	let hB = $state(0);
@@ -202,7 +195,7 @@
 	}
 </script>
 
-{isTouch}
+
 <div
 	class="body"
 	style="--color: rgb({R}, {G}, {B}); --size: {size}px; --width: {size / 10}px;"
