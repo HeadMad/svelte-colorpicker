@@ -1,7 +1,12 @@
 <script>
 	let { onchangecolor, startcolor, size = 240 } = $props();
 
-	let isTouch = 'ontouchstart' in globalThis || globalThis.DocumentTouch && document instanceof globalThis.DocumentTouch || navigator.maxTouchPoints > 0 || globalThis.navigator.msMaxTouchPoints > 0;
+	let isTouch =
+		"ontouchstart" in globalThis ||
+		(globalThis.DocumentTouch &&
+			document instanceof globalThis.DocumentTouch) ||
+		navigator.maxTouchPoints > 0 ||
+		globalThis.navigator.msMaxTouchPoints > 0;
 
 	let hR = $state(255);
 	let hG = $state(0);
@@ -34,25 +39,20 @@
 
 	let mouseDownHandlers = new Map();
 
-	const eventHandlers = [
-		function(e) {
+	const eventHandlers = {
+		mousedown(e) {
 			isMouseDown = e.target;
-		if (mouseDownHandlers.has(isMouseDown))
-			mouseDownHandlers.get(isMouseDown)(e);
+			if (mouseDownHandlers.has(isMouseDown))
+				mouseDownHandlers.get(isMouseDown)(e);
 		},
-		function(e) {
+		mouseup(e) {
 			isMouseDown = false;
 		},
-		function(e) {
+		mousemove(e) {
 			if (mouseDownHandlers.has(isMouseDown))
-			mouseDownHandlers.get(isMouseDown)(e);
+				mouseDownHandlers.get(isMouseDown)(e);
 		},
-	];
-
-	const eventNames = [
-		['mousedown', 'mouseup', 'mousemove'],
-		['touchstart', 'touchend', 'touchmove'],
-	];
+	};
 
 	$effect(() => {
 		runChangeHandler();
@@ -61,7 +61,13 @@
 		mouseDownHandlers.set(hue, hueMouseMove);
 		mouseDownHandlers.set(alpha, alphaMouseMove);
 
-		eventNames[Number(isTouch)].forEach((name, i) => document.addEventListener(name, eventHandlers[i]));
+		for (let [name, handler] of Object.entries(eventHandlers))
+			document.addEventListener(name, handler);
+		
+		return () => {
+			for (let [name, handler] of Object.entries(eventHandlers))
+				document.removeEventListener(name, handler);
+		};
 	});
 
 	$effect(() => {
@@ -195,6 +201,7 @@
 		return Math.round((curValue * newMax) / curMax);
 	}
 </script>
+
 {isTouch}
 <div
 	class="body"
