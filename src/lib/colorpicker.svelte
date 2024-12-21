@@ -1,6 +1,8 @@
 <script>
 	let { onchangecolor, startcolor, size = 240 } = $props();
 
+	let isTouch = 'ontouchstart' in globalThis || globalThis.DocumentTouch && document instanceof globalThis.DocumentTouch || navigator.maxTouchPoints > 0 || globalThis.navigator.msMaxTouchPoints > 0;
+
 	let hR = $state(255);
 	let hG = $state(0);
 	let hB = $state(0);
@@ -32,6 +34,26 @@
 
 	let mouseDownHandlers = new Map();
 
+	const eventHandlers = [
+		function(e) {
+			isMouseDown = e.target;
+		if (mouseDownHandlers.has(isMouseDown))
+			mouseDownHandlers.get(isMouseDown)(e);
+		},
+		function(e) {
+			isMouseDown = false;
+		},
+		function(e) {
+			if (mouseDownHandlers.has(isMouseDown))
+			mouseDownHandlers.get(isMouseDown)(e);
+		},
+	];
+
+	const eventNames = [
+		['mousedown', 'mouseup', 'mousemove'],
+		['touchstart', 'touchend', 'touchmove'],
+	];
+
 	$effect(() => {
 		runChangeHandler();
 
@@ -39,33 +61,17 @@
 		mouseDownHandlers.set(hue, hueMouseMove);
 		mouseDownHandlers.set(alpha, alphaMouseMove);
 
-		document.addEventListener("mousedown", (e) => {
-			isMouseDown = e.target;
-
-			if (mouseDownHandlers.has(isMouseDown))
-				mouseDownHandlers.get(isMouseDown)(e);
-		});
-
-		document.addEventListener("mouseup", (e) => {
-			isMouseDown = false;
-		});
-
-		document.addEventListener("mousemove", (e) => {
-			if (mouseDownHandlers.has(isMouseDown))
-				mouseDownHandlers.get(isMouseDown)(e);
-		});
+		eventNames[Number(isTouch)].forEach((name, i) => document.addEventListener(name, eventHandlers[i]));
 	});
-
 
 	$effect(() => {
 		if (isMouseDown) document.body.classList.add("unselectable");
 		else document.body.classList.remove("unselectable");
 	});
 
-
 	/**
-	 * 
-	*/
+	 *
+	 */
 	function setRGB() {
 		const setColor = (hRGB) => {
 			const xRGB = hRGB + valueInRange(255 - hRGB, size, size - cx);
@@ -80,7 +86,7 @@
 	}
 
 	/**
-	 * 
+	 *
 	 * @param r
 	 * @param g
 	 * @param b
@@ -92,12 +98,11 @@
 		setRGB();
 	}
 
-
 	/**
-	 * 
+	 *
 	 * @param e
 	 */
-	 function colorMouseMove(e) {
+	function colorMouseMove(e) {
 		const coord = getCoordinates(e, color);
 		cx = coord.x;
 		cy = coord.y;
@@ -105,9 +110,8 @@
 		setRGB();
 	}
 
-
 	/**
-	 * 
+	 *
 	 * @param e
 	 */
 	function hueMouseMove(e) {
@@ -122,7 +126,7 @@
 	}
 
 	/**
-	 * 
+	 *
 	 * @param e
 	 */
 	function alphaMouseMove(e) {
@@ -130,26 +134,29 @@
 		ay = coord.y;
 
 		A = Number(1 - ay / size).toFixed(2);
-		
+
 		runChangeHandler();
 	}
 
-
 	/**
-	 * 
-	*/
+	 *
+	 */
 	function runChangeHandler() {
 		onchangecolor({
 			RGBA: [R, G, B, A],
 			get HEX() {
-				return `#${R.toString(16).padStart(2, "0")}${G.toString(16).padStart(2, "0")}${B.toString(16).padStart(2, "0")}${Math.round(A*255).toString(16).padStart(2, "0")}`;
+				return `#${R.toString(16).padStart(2, "0")}${G.toString(16).padStart(2, "0")}${B.toString(16).padStart(2, "0")}${Math.round(
+					A * 255,
+				)
+					.toString(16)
+					.padStart(2, "0")}`;
 			},
 			HSLA: [],
 		});
 	}
 
 	/**
-	 * 
+	 *
 	 * @param e
 	 * @param target
 	 */
@@ -168,9 +175,8 @@
 		};
 	}
 
-
 	/**
-	 * 
+	 *
 	 * @param min
 	 * @param max
 	 * @param curr
@@ -179,9 +185,8 @@
 		return Math.max(Math.min(curr, max), min);
 	}
 
-
 	/**
-	 * 
+	 *
 	 * @param newMax
 	 * @param curMax
 	 * @param curValue
@@ -190,10 +195,11 @@
 		return Math.round((curValue * newMax) / curMax);
 	}
 </script>
-
-
-
-<div class="body" style="--color: rgb({R}, {G}, {B}); --size: {size}px; --width: {size/10}px;">
+{isTouch}
+<div
+	class="body"
+	style="--color: rgb({R}, {G}, {B}); --size: {size}px; --width: {size / 10}px;"
+>
 	<div
 		class="color"
 		style="background-color: rgb({hR}, {hG}, {hB})"
@@ -210,14 +216,17 @@
 		></div>
 	</div>
 
-	<div class="alpha line" class:nocursor={isMouseDown === alpha} bind:this={alpha}>
+	<div
+		class="alpha line"
+		class:nocursor={isMouseDown === alpha}
+		bind:this={alpha}
+	>
 		<div class="alpha-picker" style="top:{ay}px; left: 50%;"></div>
 	</div>
 
 	<div class="hue line" class:nocursor={isMouseDown === hue} bind:this={hue}>
 		<div class="hue-picker" style="top:{hy}px; left: 50%;"></div>
 	</div>
-
 </div>
 
 <style>
@@ -235,7 +244,7 @@
 		margin-right: 1rem;
 		display: inline-block;
 		float: left;
-		color:hsl(0, 60%, 50%);
+		color: hsl(0, 60%, 50%);
 	}
 
 	.body {
