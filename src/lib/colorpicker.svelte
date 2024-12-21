@@ -1,11 +1,11 @@
 <script>
-	let { onchangecolor, startcolor } = $props();
+	let { onchangecolor, startcolor, size = 240 } = $props();
 
 	let hR = $state(255);
 	let hG = $state(0);
 	let hB = $state(0);
 
-	let cx = $state(0);
+	let cx = $state(size);
 	let cy = $state(0);
 	let hy = $state(0);
 	let ay = $state(0);
@@ -14,7 +14,7 @@
 	let hue = $state();
 	let alpha = $state();
 
-	let R = $state(0);
+	let R = $state(255);
 	let G = $state(0);
 	let B = $state(0);
 	let A = $state(1);
@@ -27,14 +27,13 @@
 		(value) => setHue(0, 255, value),
 		(value) => setHue(0, 255 - value, 255),
 		(value) => setHue(value, 0, 255),
-		(value) => setHue(255, 0, 249 - value),
+		(value) => setHue(255, 0, 255 - (value || 255)),
 	];
 
-	let hueSectionHeight = 0;
 	let mouseDownHandlers = new Map();
 
 	$effect(() => {
-		hueSectionHeight = hue.offsetHeight / 6;
+		runChangeHandler();
 
 		mouseDownHandlers.set(color, colorMouseMove);
 		mouseDownHandlers.set(hue, hueMouseMove);
@@ -68,16 +67,16 @@
 	 * 
 	*/
 	function setRGB() {
-		const h = color.offsetHeight;
-		const w = color.offsetWidth;
 		const setColor = (hRGB) => {
-			const xRGB = hRGB + valueInRange(255 - hRGB, w, w - cx);
-			return Math.round(valueInRange(xRGB * 255, h, h - cy) / 255);
+			const xRGB = hRGB + valueInRange(255 - hRGB, size, size - cx);
+			return Math.round(valueInRange(xRGB * 255, size, size - cy) / 255);
 		};
 
 		R = setColor(hR);
 		G = setColor(hG);
 		B = setColor(hB);
+
+		runChangeHandler();
 	}
 
 	/**
@@ -114,10 +113,11 @@
 	function hueMouseMove(e) {
 		const coord = getCoordinates(e, hue);
 		hy = coord.y;
-		const s = clamp(0, 5, Math.floor(hy / hueSectionHeight));
-		const rem = hy % hueSectionHeight;
-		console.log(s)
-		const val = valueInRange(255, hueSectionHeight, rem);
+		const height = size / 6;
+		const s = clamp(0, 5, Math.floor(hy / height));
+		const rem = hy % height;
+
+		const val = valueInRange(255, height, rem);
 		hueSectionHandlers[s](val);
 	}
 
@@ -129,7 +129,23 @@
 		const coord = getCoordinates(e, alpha);
 		ay = coord.y;
 
-		A = Number(1 - ay / alpha.offsetHeight).toFixed(2);
+		A = Number(1 - ay / size).toFixed(2);
+		
+		runChangeHandler();
+	}
+
+
+	/**
+	 * 
+	*/
+	function runChangeHandler() {
+		onchangecolor({
+			RGBA: [R, G, B, A],
+			get HEX() {
+				return `#${R.toString(16).padStart(2, "0")}${G.toString(16).padStart(2, "0")}${B.toString(16).padStart(2, "0")}${Math.round(A*255).toString(16).padStart(2, "0")}`;
+			},
+			HSLA: [],
+		});
 	}
 
 	/**
@@ -143,11 +159,11 @@
 		return {
 			get y() {
 				y = Math.ceil(e.pageY - box.top - window.pageYOffset);
-				return clamp(0, target.offsetHeight, y);
+				return clamp(0, size, y);
 			},
 			get x() {
 				x = Math.ceil(e.pageX - box.left - window.pageXOffset);
-				return clamp(0, target.offsetWidth, x);
+				return clamp(0, size, x);
 			},
 		};
 	}
@@ -175,17 +191,9 @@
 	}
 </script>
 
-<div class="rgb">
-	<span class="square" style="background: rgba({R}, {G}, {B}, {A})"></span>
-	<span></span>
-</div>
-R: [{R}] G: [{G}] B: [{B}] A: [{A}]
-<br />
-hR: [{hR}] hG: [{hG}] hB: [{hB}]
-<br />
-cy: {cy} cx: {cx}
 
-<div class="body" style="--color: rgb({R}, {G}, {B})">
+
+<div class="body" style="--color: rgb({R}, {G}, {B}); --size: {size}px; --width: {size/10}px;">
 	<div
 		class="color"
 		style="background-color: rgb({hR}, {hG}, {hB})"
@@ -202,13 +210,14 @@ cy: {cy} cx: {cx}
 		></div>
 	</div>
 
-	<div class="hue" class:nocursor={isMouseDown === hue} bind:this={hue}>
+	<div class="alpha line" class:nocursor={isMouseDown === alpha} bind:this={alpha}>
+		<div class="alpha-picker" style="top:{ay}px; left: 50%;"></div>
+	</div>
+
+	<div class="hue line" class:nocursor={isMouseDown === hue} bind:this={hue}>
 		<div class="hue-picker" style="top:{hy}px; left: 50%;"></div>
 	</div>
 
-	<div class="alpha" class:nocursor={isMouseDown === alpha} bind:this={alpha}>
-		<div class="alpha-picker" style="top:{ay}px; left: 50%;"></div>
-	</div>
 </div>
 
 <style>
@@ -226,6 +235,7 @@ cy: {cy} cx: {cx}
 		margin-right: 1rem;
 		display: inline-block;
 		float: left;
+		color:hsl(0, 60%, 50%);
 	}
 
 	.body {
@@ -235,24 +245,28 @@ cy: {cy} cx: {cx}
 		border: 1px solid #ccc;
 		padding: 1rem;
 	}
-	.hue {
+
+	.line {
 		position: relative;
-		width: 20px;
-		height: 240px;
+		width: var(--width);
+		height: var(--size);
+	}
+
+	.hue {
 		background-image: linear-gradient(
 			0deg,
 			red 0,
-			#f0f 17%,
-			#00f 33%,
-			#0ff 50%,
-			#0f0 67%,
+			#f0f 16.6%,
+			#00f 33.2%,
+			#0ff 49.8%,
+			#0f0 66.4%,
 			#ff0 83%,
 			red
 		);
 	}
 	.color {
-		width: 240px;
-		/* height: 200px; */
+		width: var(--size);
+		height: var(--size);
 		position: relative;
 		background-color: #ff0000;
 		background-image: linear-gradient(0deg, #000, rgba(204, 154, 129, 0)),
@@ -260,9 +274,6 @@ cy: {cy} cx: {cx}
 	}
 
 	.alpha {
-		position: relative;
-		width: 20px;
-		height: 240px;
 		background-image: linear-gradient(0deg, #ffffff00, var(--color)),
 			url("data:image/svg+xml,%3Csvg viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%230000001a'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%230000001a'/%3E%3C/svg%3E");
 		background-size: 10px;
@@ -283,18 +294,6 @@ cy: {cy} cx: {cx}
 		border-radius: 50%;
 		transform: translate(-50%, -50%);
 	}
-
-	/* .hue-picker {
-		position: absolute;
-		width: 100%;
-		height: 1px;
-		padding: 0 2px;
-		left: -2px;
-		box-shadow: 0 0 3px rgba(0, 0, 0, .3);
-		border: 1px solid #fff;
-		transform: translateY(-50%);
-		opacity: 1;
-	} */
 
 	:global(.unselectable) {
 		-webkit-touch-callout: none;
