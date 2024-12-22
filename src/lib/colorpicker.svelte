@@ -198,18 +198,24 @@
 
 <div
 	class="body"
-	style="--color: rgb({R}, {G}, {B}); --size: {size}px; --width: {size / 10}px;"
+	style="
+	--RGB: {R}, {G}, {B};
+	--A: {A};
+	--hue: {hR}, {hG}, {hB};
+	--size: {size}px;
+	--width: {size / 10}px;"
 >
 	<div
 		class="color"
-		style="background-color: rgb({hR}, {hG}, {hB})"
+		style="background-color: rgb(var(--hue));"
 		id="color"
 		class:nocursor={isMouseDown === color}
 		bind:this={color}
 	>
 		<div
-			class="color-picker"
+			class="picker"
 			style="
+			background-color: rgb( var(--RGB));
 			left:{cx}px;
 			top:{cy}px;
 			"
@@ -221,11 +227,19 @@
 		class:nocursor={isMouseDown === alpha}
 		bind:this={alpha}
 	>
-		<div class="alpha-picker" style="top:{ay}px; left: 50%;"></div>
+		<div class="picker" style="
+		background-color: rgba(var(--RGB), var(--A));
+		top:{ay}px;
+		left: 50%;
+		"></div>
 	</div>
 
 	<div class="hue line" class:nocursor={isMouseDown === hue} bind:this={hue}>
-		<div class="hue-picker" style="top:{hy}px; left: 50%;"></div>
+		<div class="picker" style="
+		background-color: rgb(var(--hue));
+		top:{hy}px;
+		left: 50%;
+		"></div>
 	</div>
 </div>
 
@@ -283,7 +297,7 @@
 	}
 
 	.alpha {
-		background-image: linear-gradient(0deg, #ffffff00, var(--color)),
+		background-image: linear-gradient(0deg, #ffffff00, rgb(var(--RGB))),
 			url("data:image/svg+xml,%3Csvg viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%230000001a'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%230000001a'/%3E%3C/svg%3E");
 		background-size: 10px;
 	}
@@ -292,9 +306,7 @@
 		cursor: none;
 	}
 
-	.color-picker,
-	.hue-picker,
-	.alpha-picker {
+	.picker {
 		position: absolute;
 		width: 8px;
 		height: 8px;
