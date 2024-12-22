@@ -47,11 +47,11 @@
 	};
 
 	function runMouseDownHandler(e) {
-		if (mouseDownHandlers.has(e.target))
-				mouseDownHandlers.get(e.target)(e);
+		if (mouseDownHandlers.has(isMouseDown))
+				return mouseDownHandlers.get(isMouseDown)(e);
 
-		if (mouseDownHandlers.has(e.target.parentNode))
-				mouseDownHandlers.get(e.target.parentNode)(e);
+		if (mouseDownHandlers.has(isMouseDown.parentNode))
+				mouseDownHandlers.get(isMouseDown.parentNode)(e);
 	}
 
 	$effect(() => {
