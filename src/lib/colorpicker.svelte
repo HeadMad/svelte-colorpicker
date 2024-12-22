@@ -1,6 +1,13 @@
 <script>
 	let { onchangecolor, startcolor, size = 240 } = $props();
 
+	const isTouch =
+		"ontouchstart" in globalThis ||
+		(globalThis.DocumentTouch &&
+			document instanceof globalThis.DocumentTouch) ||
+		navigator.maxTouchPoints > 0 ||
+		globalThis.navigator.msMaxTouchPoints > 0;
+
 	let hR = $state(255);
 	let hG = $state(0);
 	let hB = $state(0);
@@ -19,7 +26,11 @@
 	let B = $state(0);
 	let A = $state(1);
 
-	let isMouseDown = $state(false);
+	/**
+	 * Object is selected
+	 * @type {boolean|color|hue|alpha}
+	 */
+	let selected = $state(false);
 
 	const hueSectionHandlers = [
 		(value) => setHue(255, value, 0),
@@ -30,29 +41,24 @@
 		(value) => setHue(255, 0, 255 - (value || 255)),
 	];
 
-	let mouseDownHandlers = new Map();
+	const mouseDownHandlers = new Map();
 
-	const eventHandlers = {
-		mousedown(e) {
-			isMouseDown = e.target;
-			runMouseDownHandler(e);
+	const eventHandlers = [
+		(e) => {
+			selected = mouseDownHandlers.has(e.target)
+				? e.target
+				: mouseDownHandlers.has(e.target.parentNode)
+					? e.target.parentNode
+					: false;
+			selected && mouseDownHandlers.get(selected)(e);
 		},
-		mouseup(e) {
-			isMouseDown = false;
-		},
-		mousemove(e) {
-			if (isMouseDown)
-				runMouseDownHandler(e);
-		},
-	};
+		(e) => selected && mouseDownHandlers.get(selected)(e),
+		(e) => (selected = false),
+	];
 
-	function runMouseDownHandler(e) {
-		if (mouseDownHandlers.has(isMouseDown))
-				return mouseDownHandlers.get(isMouseDown)(e);
-
-		if (mouseDownHandlers.has(isMouseDown.parentNode))
-				mouseDownHandlers.get(isMouseDown.parentNode)(e);
-	}
+	const eventNames = new Map();
+	eventNames.set(true, ["touchstart", "touchmove", "touchend"]);
+	eventNames.set(false, ["mousedown", "mousemove", "mouseup"]);
 
 	$effect(() => {
 		runChangeHandler();
@@ -61,17 +67,19 @@
 		mouseDownHandlers.set(hue, hueMouseMove);
 		mouseDownHandlers.set(alpha, alphaMouseMove);
 
-		for (let [name, handler] of Object.entries(eventHandlers))
-			document.addEventListener(name, handler);
-		
+		eventNames.get(isTouch).forEach((name, i) => {
+			document.addEventListener(name, eventHandlers[i]);
+		});
+
 		return () => {
-			for (let [name, handler] of Object.entries(eventHandlers))
-				document.removeEventListener(name, handler);
+			eventNames.get(isTouch).forEach((name, i) => {
+				document.removeEventListener(name, eventHandlers[i]);
+			});
 		};
 	});
 
 	$effect(() => {
-		if (isMouseDown) document.body.classList.add("unselectable");
+		if (selected) document.body.classList.add("unselectable");
 		else document.body.classList.remove("unselectable");
 	});
 
@@ -171,11 +179,13 @@
 		let x, y;
 		return {
 			get y() {
-				y = Math.ceil(e.pageY - box.top - window.pageYOffset);
+				const pageY = isTouch ? e.touches[0].pageY : e.pageY;
+				y = Math.ceil(pageY - box.top - window.pageYOffset);
 				return clamp(0, size, y);
 			},
 			get x() {
-				x = Math.ceil(e.pageX - box.left - window.pageXOffset);
+				const pageX = isTouch ? e.touches[0].pageX : e.pageX;
+				x = Math.ceil(pageX - box.left - window.pageXOffset);
 				return clamp(0, size, x);
 			},
 		};
@@ -201,8 +211,6 @@
 		return Math.round((curValue * newMax) / curMax);
 	}
 </script>
-
-
 <div
 	class="body"
 	style="
@@ -216,7 +224,7 @@
 		class="color"
 		style="background-color: rgb(var(--hue));"
 		id="color"
-		class:nocursor={isMouseDown === color}
+		class:nocursor={selected === color}
 		bind:this={color}
 	>
 		<div
@@ -229,24 +237,26 @@
 		></div>
 	</div>
 
-	<div
-		class="alpha line"
-		class:nocursor={isMouseDown === alpha}
-		bind:this={alpha}
-	>
-		<div class="picker" style="
+	<div class="alpha line" class:nocursor={selected === alpha} bind:this={alpha}>
+		<div
+			class="picker"
+			style="
 		background-color: rgba(var(--RGB), var(--A));
 		top:{ay}px;
 		left: 50%;
-		"></div>
+		"
+		></div>
 	</div>
 
-	<div class="hue line" class:nocursor={isMouseDown === hue} bind:this={hue}>
-		<div class="picker" style="
+	<div class="hue line" class:nocursor={selected === hue} bind:this={hue}>
+		<div
+			class="picker"
+			style="
 		background-color: rgb(var(--hue));
 		top:{hy}px;
 		left: 50%;
-		"></div>
+		"
+		></div>
 	</div>
 </div>
 
