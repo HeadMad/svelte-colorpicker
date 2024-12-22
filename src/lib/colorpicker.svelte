@@ -15,7 +15,7 @@
 	let cx = $state(size);
 	let cy = $state(0);
 	let hy = $state(0);
-	let ay = $state(0);
+	let ax = $state(size);
 
 	let color = $state();
 	let hue = $state();
@@ -145,9 +145,9 @@
 	 */
 	function alphaMouseMove(e) {
 		const coord = getCoordinates(e, alpha);
-		ay = coord.y;
+		ax = coord.x;
 
-		A = Number(1 - ay / size).toFixed(2);
+		A = Number(ax / size).toFixed(2);
 
 		runChangeHandler();
 	}
@@ -237,16 +237,7 @@
 		></div>
 	</div>
 
-	<div class="alpha line" class:nocursor={selected === alpha} bind:this={alpha}>
-		<div
-			class="picker"
-			style="
-		background-color: rgba(var(--RGB), var(--A));
-		top:{ay}px;
-		left: 50%;
-		"
-		></div>
-	</div>
+	
 
 	<div class="hue line" class:nocursor={selected === hue} bind:this={hue}>
 		<div
@@ -258,41 +249,41 @@
 		"
 		></div>
 	</div>
+	<div class="alpha line" class:nocursor={selected === alpha} bind:this={alpha}>
+		<div
+			class="picker"
+			style="
+		background-color: rgba(var(--RGB), var(--A));
+		left:{ax}px;
+		top: 50%;
+		"
+		></div>
+	</div>
+	<div class="square" style="background-color: rgba(var(--RGB), var(--A));"></div>
 </div>
 
 <style>
-	.rgb {
-		height: 2rem;
-		line-height: 2rem;
-		margin: 1rem;
-		align-content: baseline;
-		/* background: #ccc; */
-	}
+
 
 	.square {
-		height: 2rem;
-		width: 2rem;
-		margin-right: 1rem;
-		display: inline-block;
-		float: left;
-		color: hsl(0, 60%, 50%);
+		height: var(--width);
+		width: var(--width);
 	}
 
 	.body {
-		gap: 1rem;
-		display: flex;
+		display: grid;
+		grid-template: auto auto / auto auto;
+		gap: .7rem;
 		width: max-content;
 		border: 1px solid #ccc;
-		padding: 1rem;
+		padding: .7rem;
 	}
 
-	.line {
+
+	.hue {
 		position: relative;
 		width: var(--width);
 		height: var(--size);
-	}
-
-	.hue {
 		background-image: linear-gradient(
 			0deg,
 			red 0,
@@ -314,9 +305,12 @@
 	}
 
 	.alpha {
-		background-image: linear-gradient(0deg, #ffffff00, rgb(var(--RGB))),
+		position: relative;
+		height: var(--width);
+		width: var(--size);
+		background-image: linear-gradient(90deg, #ffffff00, rgb(var(--RGB))),
 			url("data:image/svg+xml,%3Csvg viewBox='0 0 2 2' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='%230000001a'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%230000001a'/%3E%3C/svg%3E");
-		background-size: 10px;
+		background-size: auto 10px;
 	}
 
 	.nocursor {
@@ -325,8 +319,8 @@
 
 	.picker {
 		position: absolute;
-		width: 8px;
-		height: 8px;
+		width: 10px;
+		height: 10px;
 		border: 2px solid #fff;
 		box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
 		border-radius: 50%;

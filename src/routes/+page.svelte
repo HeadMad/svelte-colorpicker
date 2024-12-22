@@ -18,7 +18,7 @@
   R: [{R}] G: [{G}] B: [{B}] A: [{A}]
   <br>
   {hex}
-  <Colorpicker {onchangecolor} size={300}/>
+  <Colorpicker {onchangecolor} size={200}/>
 </main>
 
 <style>
