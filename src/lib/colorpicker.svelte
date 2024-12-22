@@ -268,7 +268,10 @@
 	.square {
 		height: var(--width);
 		width: var(--width);
+		box-sizing: border-box;
+		border: 2px solid #fff;
 		border-radius: .3rem;
+		box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
 	}
 
 	.body {
