@@ -268,6 +268,7 @@
 	.square {
 		height: var(--width);
 		width: var(--width);
+		border-radius: .3rem;
 	}
 
 	.body {
