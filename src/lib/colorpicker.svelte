@@ -35,17 +35,24 @@
 	const eventHandlers = {
 		mousedown(e) {
 			isMouseDown = e.target;
-			if (mouseDownHandlers.has(isMouseDown))
-				mouseDownHandlers.get(isMouseDown)(e);
+			runMouseDownHandler(e);
 		},
 		mouseup(e) {
 			isMouseDown = false;
 		},
 		mousemove(e) {
-			if (mouseDownHandlers.has(isMouseDown))
-				mouseDownHandlers.get(isMouseDown)(e);
+			if (isMouseDown)
+				runMouseDownHandler(e);
 		},
 	};
+
+	function runMouseDownHandler(e) {
+		if (mouseDownHandlers.has(e.target))
+				mouseDownHandlers.get(e.target)(e);
+
+		if (mouseDownHandlers.has(e.target.parentNode))
+				mouseDownHandlers.get(e.target.parentNode)(e);
+	}
 
 	$effect(() => {
 		runChangeHandler();
