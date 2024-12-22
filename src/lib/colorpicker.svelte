@@ -191,6 +191,10 @@
 		};
 	}
 
+	function getProgress() {
+		
+	}
+
 	/**
 	 *
 	 * @param min
